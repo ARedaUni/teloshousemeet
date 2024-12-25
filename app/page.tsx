@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCallback, useState } from "react";
@@ -37,6 +36,24 @@ export default function Home() {
       const status = await statusResponse.json();
       
       if (status.status === 'completed') {
+        setProcessingStatus({ stage: 'matching', progress: 50 });
+        
+        const matchResponse = await fetch('/api/match-event', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            summary: status.text,
+            originalFileId
+          })
+        });
+
+        const matchData = await matchResponse.json();
+        if (!matchResponse.ok) {
+          throw new Error(matchData.error || 'Failed to match event');
+        }
+
         setProcessingStatus({ stage: 'summarizing', progress: 70 });
         
         const summaryResponse = await fetch('/api/generate-summary', {
@@ -48,7 +65,8 @@ export default function Home() {
             transcript: status.text,
             summaryFolderId,
             transcriptFolderId,
-            originalFileName
+            originalFileName,
+            bestMatch: matchData.matchedEvent
           })
         });
         
@@ -57,22 +75,27 @@ export default function Home() {
           throw new Error(summaryData.error || 'Failed to generate summary');
         }
 
-        const matchResponse = await fetch('/api/match-event', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            summary: summaryData.summary,
-            originalFileId,
-            summaryFileId: summaryData.summaryFileId,
-            transcriptFileId: summaryData.transcriptFileId
-          })
-        });
-
-        const matchData = await matchResponse.json();
-        if (!matchResponse.ok) {
-          throw new Error(matchData.error || 'Failed to match event');
+        if (matchData.matchedEvent) {
+          try {
+            const updateResponse = await fetch('/api/update-filenames', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                originalFileId,
+                summaryFileId: summaryData.summaryFileId,
+                transcriptFileId: summaryData.transcriptFileId,
+                matchedEvent: matchData.matchedEvent
+              })
+            });
+            
+            if (!updateResponse.ok) {
+              console.error('Failed to update filenames');
+            }
+          } catch (error) {
+            console.error('Error updating filenames:', error);
+          }
         }
         
         setProcessingStatus({ stage: 'complete', progress: 100 });

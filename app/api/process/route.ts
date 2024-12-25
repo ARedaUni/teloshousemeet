@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
                 headers: {
                     authorization: ASSEMBLY_AI_API_KEY,
                 },
+                timeout: 60000
             }
         );
 
