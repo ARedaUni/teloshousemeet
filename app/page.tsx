@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import GooglePicker from "./components/GooglePicker";
-import { Loader2, ArrowLeft, Upload, FolderOpen } from 'lucide-react';
+import { Loader2, ArrowLeft, Upload, FolderOpen, CheckIcon } from 'lucide-react';
 
 export default function Home() {
   const { data: session } = useSession();
@@ -361,22 +361,18 @@ export default function Home() {
               </Card>
             )}
 
-            {result && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Results</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {result.matchedEvent && (
-                    <div>
-                      <h3 className="font-medium">Matched Calendar Event:</h3>
-                      <p>{result.matchedEvent}</p>
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-medium">Summary:</h3>
-                    <p className="whitespace-pre-wrap">{result.summary}</p>
+{result && (
+              <Card className="bg-green-50">
+                <CardContent className="p-8 text-center">
+                  <div className="mx-auto w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-4">
+                    <CheckIcon className="w-8 h-8 text-white" />
                   </div>
+                  <CardTitle className="text-2xl font-semibold text-green-700 mb-4">Processing Complete</CardTitle>
+                  <p className="text-green-600">
+                    Your audio files have been successfully uploaded to Google Drive and renamed. 
+                    The transcripts and summaries are now available in your selected folders, 
+                    ready for your review and further use.
+                  </p>
                 </CardContent>
               </Card>
             )}
