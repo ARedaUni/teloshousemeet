@@ -3,8 +3,46 @@ import { google } from "googleapis";
 import axios from "axios";
 import { getToken } from "next-auth/jwt";
 import { Readable } from "stream";
+import { backOff } from "exponential-backoff";
 
 const ASSEMBLY_AI_API_KEY = process.env.ASSEMBLY_AI_API_KEY;
+
+const uploadFileWithRetry = async (drive: any, fileMetadata: any, media: any) => {
+  return backOff(
+    async () => {
+      try {
+        return await drive.files.create({
+          requestBody: fileMetadata,
+          media: media,
+          fields: 'id',
+          supportsAllDrives: true,
+          timeout: 60000, // 60 seconds timeout
+          retry: true,
+          retryConfig: {
+            retry: 5,
+            retryDelay: 1000,
+            statusCodesToRetry: [
+              [100, 199],
+              [429, 429],
+              [500, 599]
+            ]
+          }
+        });
+      } catch (error: any) {
+        if (error.code === 'ECONNRESET') {
+          throw error; // This will trigger the backoff retry
+        }
+        throw new Error('Upload failed: ' + error.message);
+      }
+    },
+    {
+      numOfAttempts: 3,
+      startingDelay: 1000,
+      timeMultiple: 2,
+      maxDelay: 5000
+    }
+  );
+};
 
 export async function POST(req: NextRequest) {
     try {
@@ -61,12 +99,7 @@ export async function POST(req: NextRequest) {
                 body: Readable.from(Buffer.from(buffer)),
             };
 
-            const uploadedFile = await drive.files.create({
-                // @ts-ignore
-                requestBody: fileMetadata,
-                media: media,
-                fields: 'id'
-            });
+            const uploadedFile = await uploadFileWithRetry(drive, fileMetadata, media);
 
             if (!uploadedFile.data.id) {
                 throw new Error("Failed to upload file to Google Drive");

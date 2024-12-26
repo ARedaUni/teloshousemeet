@@ -3,6 +3,7 @@ import { google } from "googleapis";
 import { getToken } from "next-auth/jwt";
 import { VertexAI } from "@google-cloud/vertexai";
 import { GoogleAuth } from "google-auth-library";
+import { backOff } from "exponential-backoff";
 
 // Load credentials from the service account file
 const auth = new GoogleAuth({
@@ -16,6 +17,34 @@ const vertexAI = new VertexAI({
   location: process.env.LOCATION,
   auth: auth,
 });
+
+const generateContentWithRetry = async (model: any, prompt: string) => {
+  return backOff(
+    async () => {
+      try {
+        return await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 8192,
+            temperature: 0.2,
+          },
+          timeout: 120000, // 2 minutes
+        });
+      } catch (error: any) {
+        if (error.code === 'ECONNRESET') {
+          throw error; // This will trigger the backoff retry
+        }
+        throw new Error('Generation failed: ' + error.message);
+      }
+    },
+    {
+      numOfAttempts: 3,
+      startingDelay: 2000,
+      timeMultiple: 2,
+      maxDelay: 10000
+    }
+  );
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -130,9 +159,7 @@ export async function POST(req: NextRequest) {
 
     Generate a professional summary following this format, emphasizing cross-industry collaboration and practical outcomes.`;
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
+    const result = await generateContentWithRetry(model, prompt);
 
     const summary = result.response.candidates[0].content.parts[0].text;
 

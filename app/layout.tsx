@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
 import ClientLayout from "./client-layout";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -17,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
       </head>

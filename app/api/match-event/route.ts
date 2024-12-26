@@ -30,9 +30,8 @@ export async function POST(req: NextRequest) {
 
     // Get events from the last month
     const startTime = new Date();
-    startTime.setMonth(startTime.getMonth() - 1);
+    startTime.setFullYear(startTime.getFullYear() - 1);
     const endTime = new Date();
-    endTime.setMonth(endTime.getMonth() + 1);
 
     const events = await calendar.events.list({
       calendarId: 'primary',

@@ -1,8 +1,12 @@
+
 // "use client";
 
 // import { useEffect, useState } from 'react';
 // import Script from 'next/script';
 // import { useSession } from 'next-auth/react';
+// import { Button } from "@/components/ui/button";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { FolderOpen } from 'lucide-react';
 
 // interface GooglePickerProps {
 //   onSelect: (folderId: string) => void;
@@ -67,23 +71,26 @@
 //   };
 
 //   return (
-//     <div className="bg-white p-6 rounded-lg shadow">
-//       <h2 className="text-xl font-semibold mb-4">{label}</h2>
-//       <div className="flex items-center gap-4">
-//         <button
+//     <Card>
+//       <CardHeader>
+//         <CardTitle className="text-lg">{label}</CardTitle>
+//       </CardHeader>
+//       <CardContent className="flex items-center justify-between">
+//         <Button
 //           onClick={showPicker}
-//           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
 //           disabled={!pickerInited || !session?.accessToken}
 //         >
+//           <FolderOpen className="mr-2 h-4 w-4" />
 //           Choose Folder
-//         </button>
+//         </Button>
 //         {selectedFolder && (
-//           <span className="text-gray-700">Selected: {selectedFolder}</span>
+//           <span className="text-sm text-gray-600">Selected: {selectedFolder}</span>
 //         )}
-//       </div>
-//     </div>
+//       </CardContent>
+//     </Card>
 //   );
 // }
+
 
 "use client";
 
@@ -95,15 +102,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderOpen } from 'lucide-react';
 
 interface GooglePickerProps {
-  onSelect: (folderId: string) => void;
+  onSelect: (folderId: string, folderName: string) => void;
   label: string;
   selectedFolder: string | null;
-  setFolderName?: (name: string) => void;
 }
 
-export default function GooglePicker({ onSelect, label, selectedFolder, setFolderName }: GooglePickerProps) {
+export default function GooglePicker({ onSelect, label, selectedFolder }: GooglePickerProps) {
   const { data: session } = useSession();
   const [pickerInited, setPickerInited] = useState(false);
+  const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
 
   useEffect(() => {
     const loadGoogleApi = () => {
@@ -132,7 +139,6 @@ export default function GooglePicker({ onSelect, label, selectedFolder, setFolde
       .setIncludeFolders(true)
       .setSelectFolderEnabled(true);
 
-    // If this is source folder picker, also show audio files
     if (label.toLowerCase().includes('source')) {
       view.setMimeTypes('audio/mp3,audio/wav,audio/x-m4a,application/vnd.google-apps.folder');
     } else {
@@ -148,8 +154,8 @@ export default function GooglePicker({ onSelect, label, selectedFolder, setFolde
       .setCallback(async (data: any) => {
         if (data.action === 'picked') {
           const folder = data.docs[0];
-          setFolderName?.(folder.name);
-          onSelect(folder.id);
+          setSelectedFolderName(folder.name);
+          onSelect(folder.id, folder.name);
         }
       })
       .build();
@@ -157,7 +163,7 @@ export default function GooglePicker({ onSelect, label, selectedFolder, setFolde
   };
 
   return (
-    <Card>
+    <Card className="bg-card text-card-foreground">
       <CardHeader>
         <CardTitle className="text-lg">{label}</CardTitle>
       </CardHeader>
@@ -165,12 +171,13 @@ export default function GooglePicker({ onSelect, label, selectedFolder, setFolde
         <Button
           onClick={showPicker}
           disabled={!pickerInited || !session?.accessToken}
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <FolderOpen className="mr-2 h-4 w-4" />
           Choose Folder
         </Button>
-        {selectedFolder && (
-          <span className="text-sm text-gray-600">Selected: {selectedFolder}</span>
+        {selectedFolderName && (
+          <span className="text-sm text-muted-foreground">Selected: {selectedFolderName}</span>
         )}
       </CardContent>
     </Card>
