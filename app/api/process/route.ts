@@ -148,6 +148,9 @@ export async function POST(req: NextRequest) {
             {
                 audio_url: publicFile.data.webContentLink,
                 speaker_labels: true,
+                auto_chapters: true,
+                speakers_expected: 2,
+                language_code: "en",
             },
             {
                 headers: {
