@@ -4,6 +4,7 @@ import { getToken } from "next-auth/jwt";
 import { VertexAI } from "@google-cloud/vertexai";
 import { GoogleAuth } from "google-auth-library";
 import { backOff } from "exponential-backoff";
+import { createDriveFileWithRetry } from "../../utils/drive-utils";
 
 // Load credentials from the service account file
 const auth = new GoogleAuth({
@@ -167,34 +168,32 @@ export async function POST(req: NextRequest) {
     const drive = google.drive({ version: "v3", auth: oauth2Client });
 
     // Create transcript file
-    const transcriptFile = await drive.files.create({
-      requestBody: {
+    const transcriptFile = await createDriveFileWithRetry(
+      drive,
+      {
         name: `${originalFileName.replace(/\.[^/.]+$/, "")}_transcript.txt`,
         parents: [transcriptFolderId],
         mimeType: "text/plain",
       },
-      media: {
+      {
         mimeType: "text/plain",
         body: transcript,
-      },
-      fields: "id",
-      supportsAllDrives: true,
-    });
+      }
+    );
 
     // Create summary file
-    const summaryFile = await drive.files.create({
-      requestBody: {
+    const summaryFile = await createDriveFileWithRetry(
+      drive,
+      {
         name: `${originalFileName.replace(/\.[^/.]+$/, "")}_summary.txt`,
         parents: [summaryFolderId],
         mimeType: "text/plain",
       },
-      media: {
+      {
         mimeType: "text/plain",
         body: summary,
-      },
-      fields: "id",
-      supportsAllDrives: true,
-    });
+      }
+    );
 
     return NextResponse.json({
       success: true,

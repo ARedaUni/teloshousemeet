@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    const { status, text, words, chapters, speaker_labels } = response.data;
+    const { status, words, chapters, speaker_labels } = response.data;
 
     if (status === 'completed') {
       // Format transcript with speakers
@@ -39,10 +39,9 @@ export async function GET(req: NextRequest) {
       }
 
       // Add chapter/topic information
-      let topicSummary = '\n\n## Topics Discussed:\n';
+      let topicSummary = '\n\n## Key extractions:\n';
       if (chapters) {
         chapters.forEach((chapter: any) => {
-          topicSummary += `\n${chapter.start_str} - ${chapter.end_str}: ${chapter.headline}\n`;
           topicSummary += `Summary: ${chapter.summary}\n`;
         });
       }

@@ -2,18 +2,59 @@ import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { getToken } from "next-auth/jwt";
 import { getEmbeddings, cosineSimilarity } from "@/lib/embeddings";
+import { backOff } from "exponential-backoff";
 
 function prepareTextForMatching(text: string): string {
-  // Take first 500 chars and last 500 chars
-  const maxLength = 500;
-  if (text.length <= maxLength * 2) {
+  // Take first 1000 chars, middle 500 chars, and last 1000 chars
+  const startLength = 1000;
+  const middleLength = 500;
+  const endLength = 1000;
+
+  if (text.length <= startLength + endLength + middleLength) {
     return text;
   }
   
-  const start = text.slice(0, maxLength);
-  const end = text.slice(-maxLength);
-  return `${start}\n...\n${end}`;
+  const start = text.slice(0, startLength);
+  
+  // Get middle section
+  const middleStart = Math.floor((text.length - middleLength) / 2);
+  const middle = text.slice(middleStart, middleStart + middleLength);
+  
+  const end = text.slice(-endLength);
+
+  // Combine with clear section markers
+  return `
+Beginning:
+${start}
+
+Middle Section:
+${middle}
+
+End:
+${end}
+  `.trim();
 }
+
+const getEmbeddingsWithRetry = async (text: string) => {
+  return backOff(
+    async () => {
+      try {
+        return await getEmbeddings(text);
+      } catch (error: any) {
+        if (error.code === 'ECONNRESET') {
+          throw error;
+        }
+        throw new Error('Embedding generation failed: ' + error.message);
+      }
+    },
+    {
+      numOfAttempts: 3,
+      startingDelay: 2000,
+      timeMultiple: 2,
+      maxDelay: 10000
+    }
+  );
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,15 +88,25 @@ export async function POST(req: NextRequest) {
 
     try {
       const processedText = prepareTextForMatching(summary);
-      const summaryEmbedding = await getEmbeddings(processedText);
+      const summaryEmbedding = await getEmbeddingsWithRetry(processedText);
 
       for (const event of events.data.items || []) {
-        const eventText = `${event.summary || ''} ${event.description || ''}`;
-        const eventEmbedding = await getEmbeddings(eventText);
-        const similarity = cosineSimilarity(summaryEmbedding, eventEmbedding);
+        // Get embeddings for both title and full text separately
+        const eventTitle = event.summary || '';
+        const eventDescription = event.description || '';
+        const eventFullText = `${eventTitle} ${eventDescription}`;
+        
+        const titleEmbedding = await getEmbeddingsWithRetry(eventTitle);
+        const fullTextEmbedding = await getEmbeddingsWithRetry(eventFullText);
+        
+        // Calculate similarities with different weights
+        const titleSimilarity = cosineSimilarity(summaryEmbedding, titleEmbedding) * 0.7; // 70% weight to title
+        const fullTextSimilarity = cosineSimilarity(summaryEmbedding, fullTextEmbedding) * 0.3; // 30% weight to full text
+        
+        const combinedSimilarity = titleSimilarity + fullTextSimilarity;
 
-        if (similarity > bestSimilarity && similarity > 0.5) {
-          bestSimilarity = similarity;
+        if (combinedSimilarity > bestSimilarity && combinedSimilarity > 0.5) {
+          bestSimilarity = combinedSimilarity;
           bestMatch = event;
         }
       }
