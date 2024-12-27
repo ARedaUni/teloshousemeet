@@ -3,25 +3,22 @@
 import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import GooglePicker from "./components/GooglePicker";
-import { Loader2, ArrowLeft, Upload, FolderOpen, CheckIcon, Sun, Moon } from 'lucide-react';
+import { Loader2, ArrowLeft, Upload, FolderOpen, CheckIcon } from 'lucide-react';
 import { ThemeToggle } from "./components/theme-toggle";
 
 export default function Home() {
   const { data: session } = useSession();
-  const { theme, setTheme } = useTheme();
   const [sourceFolder, setSourceFolder] = useState<string | null>(null);
   const [summaryFolder, setSummaryFolder] = useState<string | null>(null);
   const [workflow, setWorkflow] = useState<'select' | 'upload' | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<{
-    stage: 'uploading' | 'transcribing' | 'summarizing' | 'complete' | null;
+    stage: 'uploading' | 'transcribing' | 'summarizing' | 'complete' | 'matching' | null;
     progress?: number;
   }>({ stage: null });
   const [transcriptFolder, setTranscriptFolder] = useState<string | null>(null);
@@ -171,8 +168,8 @@ export default function Home() {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("sourceFolderId", sourceFolder);
-        formData.append("summaryFolderId", summaryFolder);
-        formData.append("transcriptFolderId", transcriptFolder);
+        formData.append("summaryFolderId", summaryFolder || '');
+        formData.append("transcriptFolderId", transcriptFolder || '');
 
         setProcessingStatus({ 
           stage: 'uploading', 
@@ -355,13 +352,13 @@ export default function Home() {
 
                 <GooglePicker
                   label="Select Summary Destination Folder"
-                  onSelect={(id, name) => setSummaryFolder(id)}
+                  onSelect={(id) => setSummaryFolder(id)}
                   selectedFolder={summaryFolder}
                 />
 
                 <GooglePicker
                   label="Select Transcript Destination Folder"
-                  onSelect={(id, name) => setTranscriptFolder(id)}
+                  onSelect={(id) => setTranscriptFolder(id)}
                   selectedFolder={transcriptFolder}
                 />
 

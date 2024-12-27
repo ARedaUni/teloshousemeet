@@ -17,9 +17,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
-      </head>
       <body className={inter.className}>
         <ClientLayout>{children}</ClientLayout>
       </body>

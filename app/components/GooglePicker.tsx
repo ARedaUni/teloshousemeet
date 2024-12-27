@@ -3,7 +3,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import Script from 'next/script';
 import { useSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,7 @@ interface GooglePickerProps {
   selectedFolder: string | null;
 }
 
-export default function GooglePicker({ onSelect, label, selectedFolder }: GooglePickerProps) {
+export default function GooglePicker({ onSelect, label }: GooglePickerProps) {
   const { data: session } = useSession();
   const [pickerInited, setPickerInited] = useState(false);
   const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
@@ -26,7 +25,7 @@ export default function GooglePicker({ onSelect, label, selectedFolder }: Google
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
       script.onload = () => {
-        // @ts-ignore
+        // @ts-expect-error not necessary to type
         window.gapi.load('picker', () => {
           setPickerInited(true);
         });
@@ -43,7 +42,7 @@ export default function GooglePicker({ onSelect, label, selectedFolder }: Google
       return;
     }
 
-    // @ts-ignore
+    // @ts-expect-error not necessary to type
     const view = new google.picker.DocsView()
       .setIncludeFolders(true)
       .setSelectFolderEnabled(true);
@@ -54,7 +53,7 @@ export default function GooglePicker({ onSelect, label, selectedFolder }: Google
       view.setMimeTypes('application/vnd.google-apps.folder');
     }
 
-    // @ts-ignore
+    // @ts-expect-error not necessary to type
     const picker = new google.picker.PickerBuilder()
       .addView(view)
       .setOAuthToken(session.accessToken as string)

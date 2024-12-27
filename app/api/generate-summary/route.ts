@@ -12,10 +12,11 @@ const auth = new GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 });
 
-// Initialize Vertex AI with the credentials
+
 const vertexAI = new VertexAI({
   project: process.env.PROJECT_ID,
   location: process.env.LOCATION,
+  // @ts-expect-error vertexAI type mismatch
   auth: auth,
 });
 
@@ -62,14 +63,14 @@ export async function POST(req: NextRequest) {
     // Extract calendar context
     let calendarContext = "";
     if (bestMatch) {
-      const eventDate = new Date(bestMatch.start?.dateTime || bestMatch.start?.date!);
-      const endDate = new Date(bestMatch.end?.dateTime || bestMatch.end?.date!);
+      const eventDate = bestMatch.start?.dateTime ?? bestMatch.start?.date ?? undefined;
+      const endDate = bestMatch.end?.dateTime ?? bestMatch.end?.date ?? undefined;
       
       calendarContext = `
         Calendar Event Details:
         Event Title: ${bestMatch.summary}
-        Date: ${eventDate.toLocaleDateString()}
-        Time: ${eventDate.toLocaleTimeString()} - ${endDate.toLocaleTimeString()}
+        Date: ${eventDate ? new Date(eventDate).toLocaleDateString() : 'Not specified'}
+        Time: ${(eventDate && endDate) ? `${new Date(eventDate).toLocaleTimeString()} - ${new Date(endDate).toLocaleTimeString()}` : 'Not specified'}
         Location: ${bestMatch.location || "Not specified"}
         Description: ${bestMatch.description || "No description"}
         Organizer: ${bestMatch.organizer?.email || "Not specified"}

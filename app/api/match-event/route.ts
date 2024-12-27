@@ -5,34 +5,17 @@ import { getEmbeddings, cosineSimilarity } from "@/lib/embeddings";
 import { backOff } from "exponential-backoff";
 
 function prepareTextForMatching(text: string): string {
-  // Take first 1000 chars, middle 500 chars, and last 1000 chars
-  const startLength = 1000;
-  const middleLength = 500;
-  const endLength = 1000;
-
-  if (text.length <= startLength + endLength + middleLength) {
+  const keyExtractionsMarker = 'Key extractions:';
+  const keyExtractionsIndex = text.indexOf(keyExtractionsMarker);
+  
+  if (keyExtractionsIndex === -1) {
+    // If no "Key extractions:" section found, return original text
     return text;
   }
   
-  const start = text.slice(0, startLength);
-  
-  // Get middle section
-  const middleStart = Math.floor((text.length - middleLength) / 2);
-  const middle = text.slice(middleStart, middleStart + middleLength);
-  
-  const end = text.slice(-endLength);
-
-  // Combine with clear section markers
-  return `
-Beginning:
-${start}
-
-Middle Section:
-${middle}
-
-End:
-${end}
-  `.trim();
+  // Get everything after "Key extractions:"
+  const keyExtractions = text.slice(keyExtractionsIndex + keyExtractionsMarker.length).trim();
+  return keyExtractions;
 }
 
 const getEmbeddingsWithRetry = async (text: string) => {
@@ -63,7 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { summary, originalFileId } = await req.json();
+    const { summary } = await req.json();
 
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: token.accessToken });
@@ -83,7 +66,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Find best matching event using Jina embeddings
-    let bestMatch = null;
+    let bestMatch: any|null = null;
     let bestSimilarity = 0;
 
     try {
@@ -100,8 +83,8 @@ export async function POST(req: NextRequest) {
         const fullTextEmbedding = await getEmbeddingsWithRetry(eventFullText);
         
         // Calculate similarities with different weights
-        const titleSimilarity = cosineSimilarity(summaryEmbedding, titleEmbedding) * 0.7; // 70% weight to title
-        const fullTextSimilarity = cosineSimilarity(summaryEmbedding, fullTextEmbedding) * 0.3; // 30% weight to full text
+        const titleSimilarity = cosineSimilarity(summaryEmbedding, titleEmbedding) * 0.85; 
+        const fullTextSimilarity = cosineSimilarity(summaryEmbedding, fullTextEmbedding) * 0.15; 
         
         const combinedSimilarity = titleSimilarity + fullTextSimilarity;
 

@@ -33,7 +33,6 @@ export const createDriveFileWithRetry = async (drive: any, requestBody: any, med
       startingDelay: 2000,
       timeMultiple: 2,
       maxDelay: 10000,
-      jitter: true
     }
   );
 }; 

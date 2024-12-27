@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Filter files to only include those directly in the selected folder
-    const files = response.data.files.filter(file => 
+    const files = response?.data?.files?.filter(file => 
       file.parents && file.parents[0] === folderId
     );
 

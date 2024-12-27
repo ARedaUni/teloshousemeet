@@ -1,11 +1,4 @@
-import { google } from "googleapis";
 import { kv } from '@vercel/kv';
-
-interface CacheEntry {
-  transcriptId: string;
-  transcript: string;
-  timestamp: number;
-}
 
 export async function getCachedTranscript(fileId: string, drive: any): Promise<string | null> {
   try {
