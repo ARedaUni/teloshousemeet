@@ -286,18 +286,18 @@ export default function Home() {
   return (
     <main className="min-h-screen p-4 md:p-8 bg-background text-foreground">
       <div className="max-w-4xl mx-auto">
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-2xl md:text-3xl font-bold flex items-center justify-between">
+      <Card className="mb-4 md:mb-8">
+          <CardHeader className="flex flex-col md:flex-row items-center justify-between">
+            <CardTitle className="text-2xl md:text-3xl font-bold flex items-center justify-between mb-2 md:mb-0">
               <span>Audio Processing App</span>
               <ThemeToggle />
             </CardTitle>
             {session ? (
-              <Button variant="destructive" onClick={() => signOut()}>
+              <Button variant="destructive" onClick={() => signOut()} className="w-full md:w-auto">
                 Sign Out
               </Button>
             ) : (
-              <Button onClick={() => signIn("google")}>
+              <Button onClick={() => signIn("google")} className="w-full md:w-auto">
                 Sign in with Google
               </Button>
             )}
