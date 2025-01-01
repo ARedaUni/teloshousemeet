@@ -21,8 +21,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <ClientLayout>
           <div className="min-h-screen flex flex-col">
-            <header className="border-b">
-              <div className="flex h-16 items-center px-4">
+            <header className="">
+              <div className="px-4 mt-2 h-16 ">
                 <Navigation />
               </div>
             </header>

@@ -29,3 +29,35 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+.prose {
+  @apply text-foreground;
+}
+
+.prose table {
+  @apply my-4;
+}
+
+.prose h2 {
+  @apply text-2xl font-bold mt-6 mb-4;
+}
+
+.prose h3 {
+  @apply text-xl font-bold mt-4 mb-2;
+}
+
+.prose strong {
+  @apply font-bold;
+}
+
+.prose ul {
+  @apply list-disc pl-6 mb-4;
+}
+
+.prose li {
+  @apply mb-1;
+}
+
+.prose p {
+  @apply mb-4;
+}

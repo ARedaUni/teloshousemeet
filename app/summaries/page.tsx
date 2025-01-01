@@ -29,7 +29,7 @@ export default function Summaries() {
           return;
         }
 
-        const filesResponse = await fetch(`/api/drive/files?folderId=${settingsData.settings.summaryFolder}`);
+        const filesResponse = await fetch(`/api/drive/files?folderId=${settingsData.settings.summaryFolder}&type=text`);
         const filesData = await filesResponse.json();
 
         if (!filesResponse.ok) throw new Error(filesData.error || "Failed to fetch files");

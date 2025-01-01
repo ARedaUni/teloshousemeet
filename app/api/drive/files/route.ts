@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
 
     const url = new URL(req.url);
     const folderId = url.searchParams.get("folderId");
+    const type = url.searchParams.get("type") || "audio"; // default to audio
 
     if (!folderId) {
       return NextResponse.json({ error: "No folder ID provided" }, { status: 400 });
@@ -20,20 +21,26 @@ export async function GET(req: NextRequest) {
     oauth2Client.setCredentials({ access_token: token.accessToken });
     const drive = google.drive({ version: "v3", auth: oauth2Client });
 
+    let query = `'${folderId}' in parents and trashed = false`;
+    
+    // Add type-specific filters
+    if (type === "audio") {
+      query += ` and (mimeType contains 'audio/' or mimeType = 'audio/mpeg' or mimeType = 'audio/wav' or mimeType = 'audio/x-m4a')`;
+    } else if (type === "text") {
+      query += ` and (mimeType = 'text/plain')`;
+    }
+
     const response = await drive.files.list({
-      q: `'${folderId}' in parents and (mimeType contains 'audio/' or mimeType = 'audio/mpeg' or mimeType = 'audio/wav' or mimeType = 'audio/x-m4a') and trashed = false`,
+      q: query,
       fields: "files(id, name, mimeType, webContentLink, parents)",
       spaces: "drive",
       supportsAllDrives: true,
       includeItemsFromAllDrives: true
     });
 
-    // Filter files to only include those directly in the selected folder
     const files = response?.data?.files?.filter(file => 
       file.parents && file.parents[0] === folderId
     );
-
-    console.log("Found files:", files);
 
     return NextResponse.json({ files: files });
   } catch (error) {

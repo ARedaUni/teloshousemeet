@@ -23,13 +23,15 @@ export default function Transcripts() {
         const settingsResponse = await fetch('/api/settings');
         const settingsData = await settingsResponse.json();
 
-        if (!settingsData.settings?.summaryFolder) {
-          setError("Summary folder not configured. Please visit settings.");
+        console.log(settingsData.settings.transcriptFolder)
+
+        if (!settingsData.settings?.transcriptFolder) {
+          setError("Transcript folder not configured. Please visit settings.");
           setLoading(false);
           return;
         }
 
-        const filesResponse = await fetch(`/api/drive/files?folderId=${settingsData.settings.transcriptFolder}`);
+        const filesResponse = await fetch(`/api/drive/files?folderId=${settingsData.settings.transcriptFolder}&type=text`);
         const filesData = await filesResponse.json();
 
         if (!filesResponse.ok) throw new Error(filesData.error || "Failed to fetch files");
@@ -52,7 +54,7 @@ export default function Transcripts() {
       <div className="max-w-4xl mx-auto">
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Summaries</CardTitle>
+            <CardTitle>Transcripts</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (

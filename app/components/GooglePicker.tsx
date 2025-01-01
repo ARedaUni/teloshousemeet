@@ -1,24 +1,21 @@
-
-
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderOpen } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { FolderIcon, Loader2 } from 'lucide-react';
 
 interface GooglePickerProps {
-  onSelect: (folderId: string, folderName: string) => void;
+  onSelect: (folderId: string) => void;
   label: string;
   selectedFolder: string | null;
 }
 
-export default function GooglePicker({ onSelect, label }: GooglePickerProps) {
+export function GooglePicker({ onSelect, label, selectedFolder }: GooglePickerProps) {
   const { data: session } = useSession();
   const [pickerInited, setPickerInited] = useState(false);
-  const [selectedFolderName, setSelectedFolderName] = useState<string | null>(null);
+  const [currentFolderName, setCurrentFolderName] = useState<string>("");
+  const [loadingFolderName, setLoadingFolderName] = useState(false);
 
   useEffect(() => {
     const loadGoogleApi = () => {
@@ -35,6 +32,31 @@ export default function GooglePicker({ onSelect, label }: GooglePickerProps) {
 
     loadGoogleApi();
   }, []);
+
+  useEffect(() => {
+    const fetchFolderName = async () => {
+      if (!selectedFolder) {
+        setCurrentFolderName("");
+        return;
+      }
+
+      try {
+        setLoadingFolderName(true);
+        const response = await fetch(`/api/drive/folder-name?folderId=${selectedFolder}`);
+        const data = await response.json();
+        
+        if (!response.ok) throw new Error(data.error);
+        
+        setCurrentFolderName(data.name);
+      } catch (err) {
+        console.error("Error fetching folder name:", err);
+      } finally {
+        setLoadingFolderName(false);
+      }
+    };
+
+    fetchFolderName();
+  }, [selectedFolder]);
 
   const showPicker = () => {
     if (!session?.accessToken) {
@@ -59,11 +81,10 @@ export default function GooglePicker({ onSelect, label }: GooglePickerProps) {
       .setOAuthToken(session.accessToken as string)
       .setDeveloperKey(process.env.GOOGLE_API_KEY)
       .setTitle(`Select ${label}`)
-      .setCallback(async (data: any) => {
+      .setCallback((data: any) => {
         if (data.action === 'picked') {
           const folder = data.docs[0];
-          setSelectedFolderName(folder.name);
-          onSelect(folder.id, folder.name);
+          onSelect(folder.id);
         }
       })
       .build();
@@ -71,26 +92,35 @@ export default function GooglePicker({ onSelect, label }: GooglePickerProps) {
   };
 
   return (
-    <Card className="bg-card text-card-foreground">
-      <CardHeader>
-        <CardTitle className="text-lg">{label}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col md:flex-row items-start md:items-center justify-between">
-        <Button
-          onClick={showPicker}
-          disabled={!pickerInited || !session?.accessToken}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 mb-2 md:mb-0"
-        >
-          <FolderOpen className="mr-2 h-4 w-4" />
-          Choose Folder
-        </Button>
-        {selectedFolderName && (
-          <Badge className="text-sm text-muted-foreground md:ml-2 bg-yellow-500 border-none">
-            Selected: {selectedFolderName}
-          </Badge>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            {label}
+          </label>
+        </div>
+        <div className="flex items-center gap-4">
+          {/* {loadingFolderName ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading...</span>
+            </div>
+          ) : currentFolderName && (
+            <div className="flex items-center gap-2 text-sm">
+              <FolderIcon className="h-4 w-4 text-primary" />
+              <span>{currentFolderName}</span>
+            </div>
+          )} */}
+          <Button 
+            onClick={showPicker}
+            disabled={!pickerInited || !session?.accessToken}
+            variant="outline"
+          >
+            Choose Folder
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 

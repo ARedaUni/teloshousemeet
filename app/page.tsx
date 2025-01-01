@@ -6,8 +6,8 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import GooglePicker from "./components/GooglePicker";
-import { Loader2, ArrowLeft, Upload, FolderOpen, CheckIcon } from 'lucide-react';
+import {GooglePicker} from "./components/GooglePicker";
+import { Loader2, ArrowLeft, Upload, FolderOpen, CheckIcon, LogIn } from 'lucide-react';
 import { ThemeToggle } from "./components/theme-toggle";
 import { FolderDisplay } from "./components/FolderDisplay";
 
@@ -319,53 +319,58 @@ export default function Home() {
   return (
     <main className="min-h-screen p-4 md:p-8 bg-background text-foreground">
       <div className="max-w-4xl mx-auto">
-      <Card className="mb-4 md:mb-8">
-          <CardHeader className="flex flex-col md:flex-row items-center justify-between">
-            <CardTitle className="text-2xl md:text-3xl font-bold flex items-center justify-between mb-2 md:mb-0">
-              <span>Audio Processing App</span>
-              <ThemeToggle />
+      {!session ? (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-2xl md:text-3xl font-bold text-center">
+              Welcome to Audio Processing App
             </CardTitle>
-            {session ? (
-              <Button variant="destructive" onClick={() => signOut()} className="w-full md:w-auto">
-                Sign Out
-              </Button>
-            ) : (
-              <Button onClick={() => signIn("google")} className="w-full md:w-auto">
-                Sign in with Google
-              </Button>
-            )}
           </CardHeader>
+          <CardContent className="flex flex-col items-center">
+            <p className="text-center text-muted-foreground mb-6">
+              Sign in to start processing your audio files
+            </p>
+            <Button
+              onClick={() => signIn("google")}
+              className="w-full max-w-sm"
+              size="lg"
+            >
+              <LogIn className="mr-2 h-5 w-5" />
+              Sign in with Google
+            </Button>
+          </CardContent>
         </Card>
-
-        {session && !workflow && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-center mb-8">Choose Your Workflow</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <Card className="cursor-pointer hover:bg-accent transition-colors" onClick={() => setWorkflow('select')}>
-                <CardContent className="p-6">
-                  <FolderOpen className="w-12 h-12 mb-4 text-primary" />
-                  <h3 className="text-lg font-semibold mb-4">Process Existing Files</h3>
-                  <p className="text-muted-foreground">
-                    Select a Google Drive folder containing your audio files to process them
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="cursor-pointer hover:bg-accent transition-colors" onClick={() => setWorkflow('upload')}>
-                <CardContent className="p-6">
-                  <Upload className="w-12 h-12 mb-4 text-primary" />
-                  <h3 className="text-lg font-semibold mb-4">Upload New Files</h3>
-                  <p className="text-muted-foreground">
-                    Upload new audio files and organize them in Google Drive
-                  </p>
-                </CardContent>
-              </Card>
+      ) : (
+        <>
+          {!workflow && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-center mb-8">Choose Your Workflow</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="cursor-pointer hover:bg-accent transition-colors" onClick={() => setWorkflow('select')}>
+                  <CardContent className="p-6">
+                    <FolderOpen className="w-12 h-12 mb-4 text-primary" />
+                    <h3 className="text-lg font-semibold mb-4">Process Existing Files</h3>
+                    <p className="text-muted-foreground">
+                      Select a Google Drive folder containing your audio files to process them
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="cursor-pointer hover:bg-accent transition-colors" onClick={() => setWorkflow('upload')}>
+                  <CardContent className="p-6">
+                    <Upload className="w-12 h-12 mb-4 text-primary" />
+                    <h3 className="text-lg font-semibold mb-4">Upload New Files</h3>
+                    <p className="text-muted-foreground">
+                      Upload new audio files and organize them in Google Drive
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {session && workflow && (
-          <div className="space-y-6">
+          {workflow && (
+            <div className="space-y-6">
             <Button variant="ghost" onClick={() => setWorkflow(null)} className="mb-4">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to workflow selection
             </Button>
@@ -499,7 +504,9 @@ export default function Home() {
               </Card>
             )}
           </div>
-        )}
+          )}
+        </>
+      )}
       </div>
     </main>
   );
