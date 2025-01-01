@@ -69,7 +69,7 @@ export default function Summaries() {
                 return (
                     <Link 
                     key={file.id} 
-                    href={`/content/${file.id}?type=transcript`}
+                    href={`/content/${file.id}?type=markdown`}
                     className="block"
                     >
                     <Card className="hover:bg-accent transition-colors">
