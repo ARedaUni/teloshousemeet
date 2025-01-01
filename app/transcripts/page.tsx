@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { formatFileName } from "../utils/text-formatting";
 
 interface FileItem {
   id: string;
@@ -65,22 +66,27 @@ export default function Transcripts() {
               <div className="text-destructive p-4">{error}</div>
             ) : (
               <div className="grid gap-4">
-                {files.map((file) => (
-                  <Link 
+                {files.map((file) => {
+  
+                return (
+                    <Link 
                     key={file.id} 
                     href={`/content/${file.id}?type=transcript`}
                     className="block"
-                  >
+                    >
                     <Card className="hover:bg-accent transition-colors">
-                      <CardContent className="flex items-center gap-4 p-4">
+                        <CardContent className="flex items-center gap-4 p-4">
                         <FileText className="h-5 w-5 text-primary" />
-                        <span>{file.name}</span>
-                      </CardContent>
+                        <span>{formatFileName(file.name)}</span>
+                        </CardContent>
                     </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
+                    </Link>
+                );
+                })}
+
+
+                </div>
+                )}
           </CardContent>
         </Card>
       </div>

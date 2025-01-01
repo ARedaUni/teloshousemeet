@@ -11,8 +11,8 @@ export async function GET(
     if (!token?.accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
-
-    const fileId = params.id;
+    const myparams = await params
+    const fileId = myparams.id;
 
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: token.accessToken });
