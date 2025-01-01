@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import GooglePicker from "./components/GooglePicker";
 import { Loader2, ArrowLeft, Upload, FolderOpen, CheckIcon } from 'lucide-react';
 import { ThemeToggle } from "./components/theme-toggle";
+import { FolderDisplay } from "./components/FolderDisplay";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -28,6 +29,15 @@ export default function Home() {
     total: number;
   } | null>(null);
   const [isComplete, setIsComplete] = useState<boolean>(false);
+  const [folders, setFolders] = useState<{
+    sourceFolder: string | null;
+    summaryFolder: string | null;
+    transcriptFolder: string | null;
+  }>({
+    sourceFolder: null,
+    summaryFolder: null,
+    transcriptFolder: null,
+  });
 
   const pollStatus = async (
     transcriptId: string,
@@ -280,6 +290,32 @@ export default function Home() {
     setIsComplete(false);
   }, [workflow]);
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+
+        if (data.settings) {
+          setFolders({
+            sourceFolder: data.settings.sourceFolder,
+            summaryFolder: data.settings.summaryFolder,
+            transcriptFolder: data.settings.transcriptFolder,
+          });
+          setSourceFolder(data.settings.sourceFolder);
+          setSummaryFolder(data.settings.summaryFolder);
+          setTranscriptFolder(data.settings.transcriptFolder);
+        } else {
+          setError("Please configure folders in settings first");
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to load settings");
+      }
+    };
+
+    if (session) fetchSettings();
+  }, [session]);
+
   return (
     <main className="min-h-screen p-4 md:p-8 bg-background text-foreground">
       <div className="max-w-4xl mx-auto">
@@ -341,26 +377,35 @@ export default function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <GooglePicker
-                  label="Select Source Folder"
-                  onSelect={(id, name) => {
-                    setSourceFolder(id);
-                    setFolderName(name);
-                  }}
-                  selectedFolder={sourceFolder}
-                />
-
-                <GooglePicker
-                  label="Select Summary Destination Folder"
-                  onSelect={(id) => setSummaryFolder(id)}
-                  selectedFolder={summaryFolder}
-                />
-
-                <GooglePicker
-                  label="Select Transcript Destination Folder"
-                  onSelect={(id) => setTranscriptFolder(id)}
-                  selectedFolder={transcriptFolder}
-                />
+                <div className="space-y-4">
+                  {folders.sourceFolder && (
+                    <FolderDisplay
+                      label="Source Folder"
+                      folderId={folders.sourceFolder}
+                    />
+                  )}
+                  {folders.summaryFolder && (
+                    <FolderDisplay
+                      label="Summary Folder"
+                      folderId={folders.summaryFolder}
+                    />
+                  )}
+                  {folders.transcriptFolder && (
+                    <FolderDisplay
+                      label="Transcript Folder"
+                      folderId={folders.transcriptFolder}
+                    />
+                  )}
+                  {(!folders.sourceFolder || !folders.summaryFolder || !folders.transcriptFolder) && (
+                    <Card className="bg-destructive/10 border-destructive/20">
+                      <CardContent className="p-4">
+                        <p className="text-destructive">
+                          Please configure your folders in the settings page first.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
 
                 {workflow === 'upload' && (
                   <div
