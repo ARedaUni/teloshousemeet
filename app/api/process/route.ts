@@ -7,6 +7,14 @@ import { backOff } from "exponential-backoff";
 
 const ASSEMBLY_AI_API_KEY = process.env.ASSEMBLY_AI_API_KEY;
 
+function sanitizeFileName(fileName: string): string {
+  // Remove any characters that might cause issues
+  return fileName
+    .replace(/[^a-zA-Z0-9-_. ]/g, '') // Remove special characters except dash, underscore, dot, and space
+    .replace(/\s+/g, '_')             // Replace spaces with underscores
+    .toLowerCase();                    // Convert to lowercase
+}
+
 const uploadFileWithRetry = async (drive: any, fileMetadata: any, media: any) => {
   return backOff(
     async () => {
@@ -88,8 +96,9 @@ export async function POST(req: NextRequest) {
 
         // If a local file was uploaded, upload it to Google Drive first
         if (file) {
+            const sanitizedFileName = sanitizeFileName(file.name);
             const fileMetadata = {
-                name: file.name,
+                name: sanitizedFileName,
                 parents: [sourceFolderId],
             };
             
@@ -105,6 +114,7 @@ export async function POST(req: NextRequest) {
                 throw new Error("Failed to upload file to Google Drive");
             }
             fileId = uploadedFile.data.id;
+            originalFileName = sanitizedFileName;
         }
 
         // Get file details if fileId is available
