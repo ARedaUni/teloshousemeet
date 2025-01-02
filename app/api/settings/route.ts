@@ -2,17 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getToken } from "next-auth/jwt";
 
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
-} else {
-  global.prisma = global.prisma || new PrismaClient();
-  prisma = global.prisma;
-}
-
-prisma = global.prisma;
-
+// Create a single PrismaClient instance
+const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,6 +31,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (!settings) {
+      throw new Error("Failed to save settings");
+    }
+
     return NextResponse.json({ success: true, settings });
   } catch (error) {
     console.error("Error saving settings:", error);
@@ -63,7 +58,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ settings });
+    // Always return an object with a settings property, even if null
+    return NextResponse.json({ settings: settings || null });
   } catch (error) {
     console.error("Error fetching settings:", error);
     return NextResponse.json(
