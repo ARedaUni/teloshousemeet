@@ -81,10 +81,14 @@ export function ContentDisplay({ id }: { id: string }) {
           tr: ({node, ...props}) => <tr className="hover:bg-gray-50 dark:hover:bg-gray-700" {...props} />,
           th: ({node, ...props}) => <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" {...props} />,
           td: ({node, ...props}) => <td className="px-6 py-4 whitespace-nowrap text-sm" {...props} />,
-          code: ({node, inline, ...props}) => 
-            inline 
-              ? <code className="bg-gray-100 dark:bg-gray-800 rounded px-1" {...props} />
-              : <code className="block bg-gray-100 dark:bg-gray-800 rounded p-4 my-4 overflow-x-auto" {...props} />
+          code: ({node, ...props}) => (
+            <code
+              className={`bg-gray-100 dark:bg-gray-800 rounded ${
+                (node as any).data?.inline ? 'px-1' : 'block p-4 my-4 overflow-x-auto'
+              }`}
+              {...props}
+            />
+          ),
         }}
       >
         {content}

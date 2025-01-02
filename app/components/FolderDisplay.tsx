@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, FolderIcon } from "lucide-react";
 
 interface FolderDisplayProps {
-  folderId: string;
-  label: string;
+  folderId: string | null;
+  label?: string;
 }
 
 export function FolderDisplay({ folderId, label }: FolderDisplayProps) {

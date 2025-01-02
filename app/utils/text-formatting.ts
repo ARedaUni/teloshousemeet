@@ -1,49 +1,54 @@
 export function formatTranscriptText(text: string): string {
-  // Split by speaker sections first
-  const speakerSections = text.split(/\n\n(?=Speaker [AB]:)/);
+    // Split by speaker sections first
+    const speakerSections = text.split(/\n\n(?=Speaker [AB]:)/);
   
-  return speakerSections.map(section => {
-    // Check if this is a speaker section
-    const speakerMatch = section.match(/^(Speaker [AB]):(.*)$/s);
-    if (!speakerMatch) return section;
-
-    const [, speaker, content] = speakerMatch;
-    const speakerColor = speaker.includes('A') ? 'text-blue-500' : 'text-green-500';
-    
-    // Split content into sentences
-    const sentences = content.match(/[^.!?]+[.!?]+/g) || [content];
-    const paragraphs = [];
-    let currentParagraph = [];
-    let wordCount = 0;
-    
-    for (const sentence of sentences) {
-      const trimmedSentence = sentence.trim();
-      const sentenceWords = trimmedSentence.split(/\s+/).length;
-      
-      if (wordCount + sentenceWords > 50) {
+    return speakerSections
+      .map((section) => {
+        // Check if this is a speaker section
+        const speakerMatch = section.match(/^(Speaker [AB]):([\s\S]*)$/);
+        if (!speakerMatch) return section;
+  
+        const speaker = speakerMatch[1];
+        const content = speakerMatch[2];
+        const speakerColor =
+          speaker.includes('A') ? 'text-blue-500' : 'text-green-500';
+  
+        // Split content into sentences
+        const sentences =
+          content.match(/[^.!?]+[.!?]+/g) || [content.trim()];
+        const paragraphs: string[] = [];
+        let currentParagraph: string[] = [];
+        let wordCount = 0;
+  
+        for (const sentence of sentences) {
+          const trimmedSentence = sentence.trim();
+          const sentenceWords = trimmedSentence.split(/\s+/).length;
+  
+          if (wordCount + sentenceWords > 50) {
+            if (currentParagraph.length > 0) {
+              paragraphs.push(currentParagraph.join(' '));
+              currentParagraph = [];
+              wordCount = 0;
+            }
+          }
+  
+          currentParagraph.push(trimmedSentence);
+          wordCount += sentenceWords;
+        }
+  
         if (currentParagraph.length > 0) {
           paragraphs.push(currentParagraph.join(' '));
-          currentParagraph = [];
-          wordCount = 0;
         }
-      }
-      
-      currentParagraph.push(trimmedSentence);
-      wordCount += sentenceWords;
-    }
-    
-    if (currentParagraph.length > 0) {
-      paragraphs.push(currentParagraph.join(' '));
-    }
-
-    // Join paragraphs with double line breaks and add speaker tag
-    return `<div class="mb-6">
-      <span class="${speakerColor} font-semibold">${speaker}:</span>
-      ${paragraphs.map(p => `<p class="mt-2">${p}</p>`).join('\n')}
-    </div>`;
-  }).join('\n\n');
-} 
-
+  
+        // Join paragraphs with double line breaks and add speaker tag
+        return `<div class="mb-6">
+          <span class="${speakerColor} font-semibold">${speaker}:</span>
+          ${paragraphs.map((p) => `<p class="mt-2">${p}</p>`).join('\n')}
+        </div>`;
+      })
+      .join('\n\n');
+  }
+  
 export const formatFileName = (name) => {
     // Remove common suffixes like "transcript" or "summary"
     const cleanedName = name

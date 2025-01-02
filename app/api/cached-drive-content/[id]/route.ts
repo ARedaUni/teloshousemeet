@@ -14,16 +14,17 @@ interface CacheEntry {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // Adjusted for context.params as a Promise
 ) {
-  const myparams = await params
   try {
+    // Await the params to extract the ID
+    const { id: fileId } = await context.params;
+
     const token = await getToken({ req });
     if (!token?.accessToken) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const fileId = myparams.id;
     const url = new URL(req.url);
     const type = url.searchParams.get('type') || 'markdown';
     
@@ -52,10 +53,13 @@ export async function GET(
       { responseType: "text" }
     );
 
+    // Ensure response.data is a string
+    const content = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+
     const result: CacheEntry = {
-      content: response.data,
-      name: file.data.name,
-      modifiedTime: file.data.modifiedTime,
+      content: content, // Use validated content
+      name: file.data.name!,
+      modifiedTime: file.data.modifiedTime!,
       contentType: type as 'markdown' | 'transcript'
     };
 
@@ -72,4 +76,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

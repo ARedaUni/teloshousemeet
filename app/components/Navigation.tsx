@@ -71,7 +71,7 @@ export function Navigation() {
   );
 
   const handleSignOut = async () => {
-    await signOut();
+    await signOut({ redirect: false });
     router.push('/');
   };
 
