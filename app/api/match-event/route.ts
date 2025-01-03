@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     const events = response.data.items || [];
 
     // Find best matching event using embeddings
-    let bestMatch = null;
+    let bestMatch: any|null = null;
     let bestSimilarity = 0;
 
     for (const event of events) {
