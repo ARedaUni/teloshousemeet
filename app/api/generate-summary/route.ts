@@ -8,18 +8,21 @@ import { createDriveFileWithRetry } from "../../utils/drive-utils";
 
 // Initialize Google Auth with credentials from environment variable
 const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '{}');
-console.log('credentials:', credentials)
 
-const auth = new GoogleAuth({
-  credentials,
-  scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-});
+// const auth = new GoogleAuth({
+//   credentials,
+//   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+// });
 
 const vertexAI = new VertexAI({
   project: process.env.PROJECT_ID,
   location: process.env.LOCATION,
   // @ts-expect-error vertexAI type mismatch
-  auth: auth,
+  credentials: {
+    client_email: credentials.client_email,
+    private_key: credentials.private_key,
+  }
+//  auth: auth,
 });
 
 export const maxDuration = 60; 
