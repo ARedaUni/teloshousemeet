@@ -85,7 +85,6 @@ export default function Home() {
           if (!matchResponse.ok) {
             throw new Error(matchData.error || 'Failed to match event');
           }
-
           setProcessingStatus({ stage: 'summarizing', progress: 70 });
           
           const summaryResponse = await fetch('/api/generate-summary', {
@@ -129,7 +128,6 @@ export default function Home() {
               console.error('Error updating filenames:', error);
             }
           }
-          
           setProcessingStatus({ stage: 'complete', progress: 100 });
           break;
         } else if (status.status === 'error') {
@@ -363,6 +361,37 @@ export default function Home() {
 
     if (session) fetchSettings();
   }, [session]);
+
+  const matchEventWithRetry = async (summary: string, originalFileId: string) => {
+    const maxAttempts = 3;
+    let attempt = 0;
+    
+    while (attempt < maxAttempts) {
+      try {
+        const response = await fetch('/api/match-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ summary, originalFileId })
+        });
+        
+        if (!response.ok) {
+          if (response.status === 504) {
+            attempt++;
+            await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+            continue;
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        attempt++;
+        if (attempt === maxAttempts) throw error;
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      }
+    }
+    throw new Error('Failed to match event after multiple attempts');
+  };
 
   return (
     <main className="min-h-screen p-4 md:p-8 bg-background text-foreground">

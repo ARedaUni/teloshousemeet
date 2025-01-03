@@ -39,6 +39,9 @@ const getEmbeddingsWithRetry = async (text: string) => {
   );
 };
 
+export const maxDuration = 300; // Set maximum duration to 5 minutes
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const token = await getToken({ req });
@@ -53,49 +56,53 @@ export async function POST(req: NextRequest) {
 
     const preparedText = prepareTextForMatching(summary);
     
-    const embeddings = await backOff(
-      async () => {
-        try {
-          return await getEmbeddings(preparedText);
-        } catch (error: any) {
-          if (error.code === 'ECONNRESET' || error.code === 504) {
-            throw error; // Will trigger retry
-          }
-          throw new Error(`Embedding generation failed: ${error.message}`);
-        }
+    // Generate embeddings in a separate request
+    const embeddingsResponse = await fetch(new URL('/api/generate-embeddings', req.url).toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': req.headers.get('cookie') || ''
       },
-      {
-        numOfAttempts: 5,
-        startingDelay: 2000,
-        timeMultiple: 2,
-        maxDelay: 30000,
-        jitter: 'full'
-      }
-    );
+      body: JSON.stringify({ text: preparedText })
+    });
 
+    if (!embeddingsResponse.ok) {
+      throw new Error('Failed to generate embeddings');
+    }
+
+    const { embeddings } = await embeddingsResponse.json();
+
+    // Rest of your calendar matching logic...
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: token.accessToken });
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
-    // Get events from the last month
-    const startTime = new Date();
-    startTime.setFullYear(startTime.getFullYear() - 1);
-    const endTime = new Date();
+    // Get events from the last month with caching
+    const cacheKey = `calendar-events-${token.email}`;
+    let events = await getFromCache(cacheKey);
 
-    const events = await calendar.events.list({
-      calendarId: 'primary',
-      timeMin: startTime.toISOString(),
-      timeMax: endTime.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime'
-    });
+    if (!events) {
+      const startTime = new Date();
+      startTime.setFullYear(startTime.getFullYear() - 1);
+      
+      const response = await calendar.events.list({
+        calendarId: 'primary',
+        timeMin: startTime.toISOString(),
+        maxResults: 2500,
+        singleEvents: true,
+        orderBy: 'startTime',
+      });
+      
+      events = response.data.items;
+      await setInCache(cacheKey, events, 3600); // Cache for 1 hour
+    }
 
     // Find best matching event using Jina embeddings
     let bestMatch: any|null = null;
     let bestSimilarity = 0;
 
     try {
-      for (const event of events.data.items || []) {
+      for (const event of events) {
         // Get embeddings for both title and full text separately
         const eventTitle = event.summary || '';
         const eventDescription = event.description || '';
