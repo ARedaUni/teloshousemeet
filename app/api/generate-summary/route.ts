@@ -6,12 +6,13 @@ import { GoogleAuth } from "google-auth-library";
 import { backOff } from "exponential-backoff";
 import { createDriveFileWithRetry } from "../../utils/drive-utils";
 
-// Load credentials from the service account file
+// Initialize Google Auth with credentials from environment variable
+const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '{}');
+
 const auth = new GoogleAuth({
-  keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  credentials,
   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 });
-
 
 const vertexAI = new VertexAI({
   project: process.env.PROJECT_ID,

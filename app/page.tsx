@@ -151,6 +151,54 @@ export default function Home() {
     }
   };
 
+  const MAX_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+
+  const uploadLargeFile = async (file: File, sourceFolderId: string) => {
+    const chunks = Math.ceil(file.size / MAX_CHUNK_SIZE);
+    let uploadId = '';
+    
+    // Start upload session
+    const sessionResponse = await fetch('/api/upload/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        sourceFolderId
+      })
+    });
+    
+    const { uploadId: newUploadId } = await sessionResponse.json();
+    uploadId = newUploadId;
+
+    // Upload chunks
+    for (let i = 0; i < chunks; i++) {
+      const start = i * MAX_CHUNK_SIZE;
+      const end = Math.min(start + MAX_CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
+      
+      const formData = new FormData();
+      formData.append('chunk', chunk);
+      formData.append('uploadId', uploadId);
+      formData.append('partNumber', i.toString());
+      
+      await fetch('/api/upload/chunk', {
+        method: 'POST',
+        body: formData
+      });
+    }
+
+    // Complete upload
+    const completeResponse = await fetch('/api/upload/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uploadId })
+    });
+
+    return await completeResponse.json();
+  };
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (!session) {
       setError("Please sign in first");
@@ -175,25 +223,25 @@ export default function Home() {
         
         setFileProgress({ current: i + 1, total: acceptedFiles.length });
         const file = acceptedFiles[i];
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("sourceFolderId", sourceFolder);
-        formData.append("summaryFolderId", summaryFolder || '');
-        formData.append("transcriptFolderId", transcriptFolder || '');
-
-        setProcessingStatus({ 
-          stage: 'uploading', 
-          progress: (i / acceptedFiles.length) * 20 
-        });
         
-        const response = await fetch("/api/process", {
+        // Use chunked upload for large files
+        const { fileId, fileName } = await uploadLargeFile(file, sourceFolder);
+        
+        const processResponse = await fetch("/api/process", {
           method: "POST",
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileId,
+            sourceFolderId: sourceFolder,
+            summaryFolderId: summaryFolder,
+            transcriptFolderId: transcriptFolder,
+            originalFileName: fileName
+          }),
         });
 
-        const data = await response.json();
+        const data = await processResponse.json();
 
-        if (!response.ok) {
+        if (!processResponse.ok) {
           throw new Error(data.error || "Something went wrong");
         }
 
