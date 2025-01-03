@@ -21,6 +21,8 @@ const vertexAI = new VertexAI({
   auth: auth,
 });
 
+export const maxDuration = 60; 
+
 const generateContentWithRetry = async (model: any, prompt: string) => {
   return backOff(
     async () => {

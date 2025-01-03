@@ -7,7 +7,7 @@ const nextConfig = {
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
     PROJECT_ID: process.env.PROJECT_ID,
     LOCATION: process.env.LOCATION,
-    GOOGLE_APPLICATION_CREDENTIALS: JSON.stringify({
+    GOOGLE_APPLICATION_CREDENTIALS_JSON: JSON.stringify({
       type: process.env.GOOGLE_SERVICE_ACCOUNT_TYPE,
       project_id: process.env.GOOGLE_SERVICE_ACCOUNT_PROJECT_ID,
       private_key_id: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID,

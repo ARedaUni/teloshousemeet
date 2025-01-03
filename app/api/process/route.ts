@@ -17,6 +17,8 @@ function sanitizeFileName(fileName: string): string {
   .replace(/^[._-]+|[._-]+$/g, ''); // Remove leading/trailing special chars
 }
 
+export const maxDuration = 60; 
+
 const uploadFileWithRetry = async (drive: any, fileMetadata: any, media: any) => {
   return backOff(
     async () => {

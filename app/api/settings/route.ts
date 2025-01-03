@@ -5,6 +5,8 @@ import { getToken } from "next-auth/jwt";
 // Create a single PrismaClient instance
 const prisma = new PrismaClient();
 
+export const maxDuration = 60; 
+
 export async function POST(req: NextRequest) {
   try {
     const token = await getToken({ req });
