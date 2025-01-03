@@ -15,20 +15,28 @@ try {
   credentials = {};
 }
 
-// const auth = new GoogleAuth({
-//   credentials,
-//   scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-// });
+// After line 12 in generate-summary/route.ts
+console.log('Parsed credentials type:', typeof credentials);
+console.log('Has client_email:', Boolean(credentials.client_email));
+console.log('Has private_key:', Boolean(credentials.private_key));
+console.log('Project ID:', process.env.PROJECT_ID);
+console.log('Location:', process.env.LOCATION);
+
+const auth = new GoogleAuth({
+  credentials,
+  scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+});
 
 const vertexAI = new VertexAI({
   project: process.env.PROJECT_ID,
   location: process.env.LOCATION,
   // @ts-expect-error vertexAI type mismatch
-  credentials: {
-    client_email: credentials.client_email,
-    private_key: credentials.private_key?.replace(/\\n/g, '\n'),
-  }
-//  auth: auth,
+  auth: auth,
+  // credentials: {
+  //   client_email: credentials.client_email,
+  //   private_key: credentials.private_key?.replace(/\\n/g, '\n'),
+  // }
+
 });
 
 export const maxDuration = 60; 
