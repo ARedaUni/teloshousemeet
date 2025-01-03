@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
     console.error("Error in match-event:", error);
     return NextResponse.json(
       { error: "Failed to match event" },
-      { status: error.code === 504 ? 504 : 500 }
+      { status: error instanceof Error && 'code' in error ? error.code === 504 ? 504 : 500 : 500 }
     );
   }
 }
