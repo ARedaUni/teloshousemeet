@@ -7,7 +7,13 @@ import { backOff } from "exponential-backoff";
 import { createDriveFileWithRetry } from "../../utils/drive-utils";
 
 // Initialize Google Auth with credentials from environment variable
-const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '{}');
+let credentials;
+try {
+  credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '{}');
+} catch (error) {
+  console.error('Error parsing credentials:', error);
+  credentials = {};
+}
 
 // const auth = new GoogleAuth({
 //   credentials,
@@ -20,7 +26,7 @@ const vertexAI = new VertexAI({
   // @ts-expect-error vertexAI type mismatch
   credentials: {
     client_email: credentials.client_email,
-    private_key: credentials.private_key,
+    private_key: credentials.private_key?.replace(/\\n/g, '\n'),
   }
 //  auth: auth,
 });
