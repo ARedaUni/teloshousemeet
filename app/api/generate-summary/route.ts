@@ -62,13 +62,18 @@ try {
   vertexAI = new VertexAI({
     project: process.env.PROJECT_ID,
     location: process.env.LOCATION,
-    // @ts-expect-error vertex not know auth
-    auth: auth
+    //@ts-expect-error vertex not know credneitals
+    credentials: {
+      client_email: credentials.client_email,
+      private_key: credentials.private_key?.replace(/\\n/g, '\n'),
+      project_id: credentials.project_id,
+    }
   });
   
   console.log('VertexAI initialized with:', {
     project: process.env.PROJECT_ID,
     location: process.env.LOCATION,
+    hasCredentials: Boolean(credentials.client_email && credentials.private_key)
   });
 } catch (error) {
   logError('VertexAI initialization', error);
