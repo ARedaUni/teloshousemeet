@@ -25,7 +25,7 @@ console.log('Location:', process.env.LOCATION);
 const auth = new GoogleAuth({
   credentials: {
     client_email: credentials.client_email,
-    private_key: credentials.private_key?.replace(/\\n/g, '\n'),
+    private_key: credentials.private_key,
     project_id: credentials.project_id,
   },
   scopes: ['https://www.googleapis.com/auth/cloud-platform']
