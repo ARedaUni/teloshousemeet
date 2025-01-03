@@ -62,6 +62,7 @@ try {
   vertexAI = new VertexAI({
     project: process.env.PROJECT_ID,
     location: process.env.LOCATION,
+    // @ts-expect-error vertex not know auth
     auth: auth
   });
   
