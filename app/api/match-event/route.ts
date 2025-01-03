@@ -18,6 +18,27 @@ function prepareTextForMatching(text: string): string {
   return keyExtractions;
 }
 
+const getEmbeddingsWithRetry = async (text: string) => {
+  return backOff(
+    async () => {
+      try {
+        return await getEmbeddings(text);
+      } catch (error: any) {
+        if (error.code === 'ECONNRESET') {
+          throw error;
+        }
+        throw new Error('Embedding generation failed: ' + error.message);
+      }
+    },
+    {
+      numOfAttempts: 3,
+      startingDelay: 2000,
+      timeMultiple: 2,
+      maxDelay: 10000
+    }
+  );
+};
+
 export async function POST(req: NextRequest) {
   try {
     const token = await getToken({ req });
