@@ -8,6 +8,7 @@ import { createDriveFileWithRetry } from "../../utils/drive-utils";
 
 // Initialize Google Auth with credentials from environment variable
 const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '{}');
+console.log(credentials)
 
 const auth = new GoogleAuth({
   credentials,
