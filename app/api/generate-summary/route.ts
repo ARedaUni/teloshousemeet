@@ -6,37 +6,73 @@ import { GoogleAuth } from "google-auth-library";
 import { backOff } from "exponential-backoff";
 import { createDriveFileWithRetry } from "../../utils/drive-utils";
 
+// Enhanced error logging
+const logError = (stage: string, error: any) => {
+  console.error(`Error during ${stage}:`, {
+    message: error.message,
+    code: error.code,
+    details: error.details,
+    stack: error.stack,
+  });
+};
+
 // Initialize Google Auth with credentials from environment variable
 let credentials;
 try {
-  credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || '{}');
+  const rawCredentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  console.log('Raw credentials length:', rawCredentials?.length);
+  console.log('Raw credentials type:', typeof rawCredentials);
+  
+  credentials = JSON.parse(rawCredentials || '{}');
+  
+  console.log('Parsed credentials validation:', {
+    hasType: Boolean(credentials.type),
+    hasProjectId: Boolean(credentials.project_id),
+    hasPrivateKey: Boolean(credentials.private_key),
+    hasClientEmail: Boolean(credentials.client_email),
+    projectId: credentials.project_id,
+    clientEmail: credentials.client_email,
+  });
 } catch (error) {
-  console.error('Error parsing credentials:', error);
-  credentials = {};
+  logError('credentials parsing', error);
+  throw new Error('Failed to parse credentials');
 }
 
-// After line 12 in generate-summary/route.ts
-console.log('Parsed credentials type:', typeof credentials);
-console.log('Has client_email:', Boolean(credentials.client_email));
-console.log('Has private_key:', Boolean(credentials.private_key));
-console.log('Project ID:', process.env.PROJECT_ID);
-console.log('Location:', process.env.LOCATION);
+// Initialize auth with proper error handling
+let auth;
+try {
+  auth = new GoogleAuth({
+    credentials: {
+      client_email: credentials.client_email,
+      private_key: credentials.private_key?.replace(/\\n/g, '\n'),
+      project_id: credentials.project_id,
+    },
+    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+  });
+  
+  console.log('Auth initialized successfully');
+} catch (error) {
+  logError('auth initialization', error);
+  throw new Error('Failed to initialize auth');
+}
 
-const auth = new GoogleAuth({
-  credentials: {
-    client_email: credentials.client_email,
-    private_key: credentials.private_key,
-    project_id: credentials.project_id,
-  },
-  scopes: ['https://www.googleapis.com/auth/cloud-platform']
-});
-
-const vertexAI = new VertexAI({
-  project: process.env.PROJECT_ID,
-  location: process.env.LOCATION,
-  //@ts-expect-error vertex not expecting auth type
-  auth: auth
-});
+// Initialize VertexAI with proper error handling
+let vertexAI;
+try {
+  vertexAI = new VertexAI({
+    project: process.env.PROJECT_ID,
+    location: process.env.LOCATION,
+    auth: auth
+  });
+  
+  console.log('VertexAI initialized with:', {
+    project: process.env.PROJECT_ID,
+    location: process.env.LOCATION,
+  });
+} catch (error) {
+  logError('VertexAI initialization', error);
+  throw new Error('Failed to initialize VertexAI');
+}
 
 export const maxDuration = 60; 
 
