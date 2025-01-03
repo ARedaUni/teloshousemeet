@@ -13,8 +13,14 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const chunk = formData.get('chunk') as Blob;
-    const uploadId = formData.get('uploadId') as string; // This is the fileId
+    const uploadId = formData.get('uploadId') as string;
     const partNumber = parseInt(formData.get('partNumber') as string);
+    const totalChunks = parseInt(formData.get('totalChunks') as string);
+    const mimeType = formData.get('mimeType') as string;
+
+    if (!chunk || !uploadId || isNaN(partNumber)) {
+      return NextResponse.json({ error: "Invalid chunk data" }, { status: 400 });
+    }
 
     const arrayBuffer = await chunk.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -25,24 +31,39 @@ export async function POST(req: NextRequest) {
 
     await backOff(
       async () => {
-        return drive.files.update({
-          fileId: uploadId,
-          media: {
-            mimeType: 'application/octet-stream',
-            body: Readable.from(buffer),
-          },
-          supportsAllDrives: true,
-        });
+        try {
+          const response = await drive.files.update({
+            fileId: uploadId,
+            media: {
+              mimeType: mimeType || 'application/octet-stream',
+              body: Readable.from(buffer),
+            },
+            supportsAllDrives: true,
+            uploadType: 'resumable',
+            fields: 'id,size'
+          });
+
+          return response;
+        } catch (error: any) {
+          if (error.code === 'ECONNRESET' || error.code === 503 || error.code === 504) {
+            throw error; // Trigger retry
+          }
+          throw new Error(`Upload failed: ${error.message}`);
+        }
       },
       {
-        numOfAttempts: 3,
+        numOfAttempts: 5,
         startingDelay: 2000,
         timeMultiple: 2,
-        maxDelay: 10000,
+        maxDelay: 30000,
+        jitter: 'full'
       }
     );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      progress: (partNumber + 1) / totalChunks * 100
+    });
   } catch (error) {
     console.error("Error uploading chunk:", error);
     return NextResponse.json({ error: "Failed to upload chunk" }, { status: 500 });

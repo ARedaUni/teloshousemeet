@@ -10,9 +10,11 @@ const ASSEMBLY_AI_API_KEY = process.env.ASSEMBLY_AI_API_KEY;
 function sanitizeFileName(fileName: string): string {
   // Remove any characters that might cause issues
   return fileName
-    .replace(/[^a-zA-Z0-9-_. ]/g, '') // Remove special characters except dash, underscore, dot, and space
-    .replace(/\s+/g, '_')             // Replace spaces with underscores
-    .toLowerCase();                    // Convert to lowercase
+  .replace(/[^a-zA-Z0-9-_. ]/g, '')
+  .replace(/\s+/g, '_')
+  .toLowerCase()
+  .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+  .replace(/^[._-]+|[._-]+$/g, ''); // Remove leading/trailing special chars
 }
 
 const uploadFileWithRetry = async (drive: any, fileMetadata: any, media: any) => {
