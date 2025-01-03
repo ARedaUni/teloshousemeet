@@ -23,20 +23,19 @@ console.log('Project ID:', process.env.PROJECT_ID);
 console.log('Location:', process.env.LOCATION);
 
 const auth = new GoogleAuth({
-  credentials,
-  scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+  credentials: {
+    client_email: credentials.client_email,
+    private_key: credentials.private_key?.replace(/\\n/g, '\n'),
+    project_id: credentials.project_id,
+  },
+  scopes: ['https://www.googleapis.com/auth/cloud-platform']
 });
 
 const vertexAI = new VertexAI({
   project: process.env.PROJECT_ID,
   location: process.env.LOCATION,
-  // @ts-expect-error vertexAI type mismatch
-  auth: auth,
-  // credentials: {
-  //   client_email: credentials.client_email,
-  //   private_key: credentials.private_key?.replace(/\\n/g, '\n'),
-  // }
-
+  //@ts-expect-error vertex not expecting auth type
+  auth: auth
 });
 
 export const maxDuration = 60; 
