@@ -3,7 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { getEmbeddings } from "@/lib/embeddings";
 import { backOff } from "exponential-backoff";
 
-export const maxDuration = 300; // Set maximum duration to 5 minutes
+export const maxDuration = 60; // Set maximum duration to 5 minutes
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
